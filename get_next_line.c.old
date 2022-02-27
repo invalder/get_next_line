@@ -1,0 +1,305 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   get_next_line.c                                    :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: nnakarac <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2022/02/26 20:13:44 by nnakarac          #+#    #+#             */
+/*   Updated: 2022/02/27 21:26:51 by nnakarac         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+/****************************************************************
+ * 20 Total
+ * 10 keep first
+ * return remaining
+ *
+ * POC
+ ****************************************************************/
+#include "get_next_line.h"
+
+char	*get_next_line(int fd);
+
+char	*get_next_line(int fd)
+{
+	static char	*store_line = NULL;
+	char		*read_line;
+	char		*tmp_line;
+	int			read_cnt;
+	int			ent;
+
+	ent = 0;
+	read_line = malloc(sizeof(char) * (BUFFER_SIZE + 1));
+	bzero(read_line, BUFFER_SIZE + 1);
+	tmp_line = NULL;
+	if (read(fd, NULL, 0) < 0 || !read_line)
+		return (NULL);
+	read_cnt = read(fd, read_line, BUFFER_SIZE);
+	printf("read_cnt: %d\n",read_cnt);
+	printf("read_one: %d\n",*read_line);
+	//*(read_line + read_cnt) = 0;
+	// printf("OK1\n");
+	printf("bfr store_line: %s\n", store_line);
+	printf("bfr read_line: %s\n", read_line);
+	if (!store_line)
+	{
+		store_line = malloc(sizeof(char) * (read_cnt + 1));
+		if (!store_line)
+			return (NULL);
+		memcpy(store_line, read_line, read_cnt);
+		*(store_line + read_cnt) = '\0';
+		free(read_line);
+		read_line = NULL;
+		// printf("store_line: %s\n", store_line);
+		printf("add store_line: %s\n", store_line);
+		printf("add read_line: %s\n", read_line);
+	}
+	else
+	{
+		tmp_line = malloc(sizeof(char) * (strlen(store_line) + 1));
+		if (!tmp_line)
+			return (NULL);
+		memcpy(tmp_line, store_line, strlen(store_line));
+		*(tmp_line + strlen(store_line)) = '\0';
+		free(store_line);
+		store_line = NULL;
+		store_line = malloc(sizeof(char) * (read_cnt + strlen(tmp_line) + 1));
+		if (!store_line)
+			return (NULL);
+		memcpy(store_line, tmp_line, strlen(tmp_line));
+		memcpy(store_line + strlen(tmp_line), read_line, read_cnt);
+		*(store_line + read_cnt + strlen(tmp_line)) = '\0';
+		free(tmp_line);
+		tmp_line = NULL;
+		free(read_line);
+		read_line = NULL;
+		printf("add store_line: %s\n", store_line);
+		printf("add read_line: %s\n", read_line);
+	}
+	while (*(store_line + ent) != '\n' && *(store_line + ent))
+		ent++;
+	if (*(store_line + ent) != '\n')
+		ent = 0;
+	// printf("OK2\n");
+	// printf("ent: %d\n", ent);
+	if (ent >= 0 && *(store_line + ent) == '\n')
+	{
+		printf("bfr chk tmp_line: %s\n", tmp_line);
+		printf("bfr chk store_line: %s\n", store_line);
+		printf("bfr chk read_line: %s\n", read_line);
+		read_line = malloc(sizeof(char) * (ent + 2));
+		if (!read_line)
+			return (NULL);
+		tmp_line = malloc(sizeof(char) * (strlen(store_line + ent + 1) + 1));
+		if (!tmp_line)
+			return (NULL);
+		// printf("OK3\n");
+		memcpy(read_line, store_line, ent + 1);
+		*(read_line + ent + 1) = '\0';
+		memcpy(tmp_line, store_line + ent + 1, strlen(store_line + ent + 1));
+		*(tmp_line + strlen(store_line + ent + 1)) = '\0';
+		free(store_line);
+		store_line = NULL;
+		store_line = malloc(sizeof(char) * (read_cnt + strlen(tmp_line) + 1));
+		if (!store_line)
+			return (NULL);
+		memcpy(store_line, tmp_line, strlen(tmp_line));
+		free(tmp_line);
+		tmp_line = NULL;
+		printf("aft chk tmp_line: %s\n", tmp_line);
+		printf("aft chk store_line: %s\n", store_line);
+		printf("aft chk read_line: %s\n", read_line);
+		return (read_line);
+	}
+	else if (*(read_line + read_cnt) == 0)
+	{
+		printf("RET\n");
+		// int a = 0;
+		// while (*(read_line + a))
+		// 	printf("dd:%c\n", *(read_line + a++));
+		// printf("store_line: %s\n", store_line);
+		// printf("read_line: %s\n", read_line);
+		if (store_line)
+			read_line = malloc(sizeof(char) * (strlen(store_line) + read_cnt + 1));
+		else
+			read_line = malloc(sizeof(char) * (read_cnt + 1));
+		if (!read_line)
+			return (NULL);
+		if (store_line)
+			memcpy(read_line, store_line, strlen(store_line) + read_cnt + 1);
+		else
+			memcpy(read_line, store_line, read_cnt + 1);
+		*(read_line + strlen(store_line) + read_cnt) = '\0';
+		free(store_line);
+		store_line = NULL;
+		printf("store_line: %s\n", store_line);
+		printf("read_line: %s\n", read_line);
+		return (read_line);
+	}
+	return (NULL);
+}
+
+void	gnl(int fd, char const *expectedReturn)
+{
+	char	*gnl_return;
+
+	gnl_return = get_next_line(fd);
+	if (expectedReturn == NULL)
+	{
+		if (gnl_return == NULL)
+			printf("Exp: NULL\nRes: NULL\n");
+		else
+			printf("Exp: NULL\nRes: %s\n", gnl_return);
+	}
+	else
+	{
+		if (!strcmp(gnl_return, expectedReturn))
+			printf("Exp: %s\nRes: %s\n", expectedReturn, gnl_return);
+		else
+			printf("Exp: %s\nRes: %s\n", expectedReturn, gnl_return);
+	}
+	printf("<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>\n");
+	free(gnl_return);
+}
+
+int	main(void)
+{
+	int	fd;
+
+	// fd = open("gnlTester/files/multiple_line_with_nl", O_RDWR);
+	// gnl(fd, NULL);
+	// gnl(fd, NULL);
+	// gnl(fd, NULL);
+	// gnl(fd, NULL);
+	// gnl(fd, NULL);
+	// gnl(fd, NULL);
+	// close(fd);
+
+	// printf("<<<<<<<<<<Test#1>>>>>>>>>>\n");
+	// fd = open("gnlTester/files/empty", O_RDWR);
+	// /* 1 */ gnl(1000,  NULL);
+	// /* 2 */ gnl(-1,  NULL);
+	// close(fd);
+	// /* 3 */ gnl(fd,  NULL);
+
+	printf("<<<<<<<<<<Test#2>>>>>>>>>>\n");
+	fd = open("gnlTester/files/empty", O_RDWR);
+	/* 1 */ gnl(fd, NULL);
+	/* 2 */ gnl(fd, NULL);
+	close(fd);
+
+	// printf("<<<<<<<<<<Test#3>>>>>>>>>>\n");
+	// fd = open("gnlTester/files/nl", O_RDWR);
+	// // printf("fd = %d\n", fd);
+	// /* 1 */ gnl(fd, "\n");
+	// /* 2 */ gnl(fd, NULL);
+	// close(fd);
+
+	// printf("<<<<<<<<<<Test#4>>>>>>>>>>\n");
+	// fd = open("gnlTester/files/41_no_nl", O_RDWR);
+	// // printf("fd = %d\n", fd);
+	// /* 1 */ gnl(fd, "01234567890123456789012345678901234567890");
+	// /* 2 */ gnl(fd, NULL);
+	// close(fd);
+
+	// printf("<<<<<<<<<<Test#5>>>>>>>>>>\n");
+	// fd = open("gnlTester/files/41_with_nl", O_RDWR);
+	// // printf("fd = %d\n", fd);
+	// /* 1 */ gnl(fd, "0123456789012345678901234567890123456789\n");
+	// /* 2 */ gnl(fd, "0");
+	// /* 3 */ gnl(fd, NULL);
+	// close(fd);
+
+	// printf("<<<<<<<<<<Test#6>>>>>>>>>>\n");
+	// fd = open("gnlTester/files/42_no_nl", O_RDWR);
+	// /* 1 */ gnl(fd, "012345678901234567890123456789012345678901");
+	// /* 2 */ gnl(fd, NULL);
+	// close(fd);
+
+	// printf("<<<<<<<<<<Test#7>>>>>>>>>>\n");
+	// fd = open("gnlTester/files/42_with_nl", O_RDWR);
+	// /* 1 */ gnl(fd, "01234567890123456789012345678901234567890\n");
+	// if (BUFFER_SIZE == 42)
+	// {
+	// 	/* 2 */ char c = 0; read(fd, &c, 1);
+	// 	/* 3 */ gnl(fd, NULL);
+	// }
+	// else
+	// {
+	// 	/* 2 */ gnl(fd, "1");
+	// 	/* 3 */ gnl(fd, NULL);
+	// }
+	// close(fd);
+
+	// printf("<<<<<<<<<<Test#8>>>>>>>>>>\n");
+	// fd = open("gnlTester/files/43_no_nl", O_RDWR);
+	// /* 1 */ gnl(fd, "0123456789012345678901234567890123456789012");
+	// /* 2 */ gnl(fd, NULL);
+	// close(fd);
+
+	// printf("<<<<<<<<<<Test#9>>>>>>>>>>\n");
+	// fd = open("gnlTester/files/43_with_nl", O_RDWR);
+	// /* 1 */ gnl(fd, "012345678901234567890123456789012345678901\n");
+	// /* 2 */ gnl(fd, "2");
+	// /* 3 */ gnl(fd, NULL);
+	// close(fd);
+
+	// printf("<<<<<<<<<<Test#10>>>>>>>>>>\n");
+	// fd = open("gnlTester/files/multiple_nlx5", O_RDWR);
+	// /* 1 */ gnl(fd, "\n");
+	// /* 2 */ gnl(fd, "\n");
+	// /* 3 */ gnl(fd, "\n");
+	// /* 4 */ gnl(fd, "\n");
+	// /* 5 */ gnl(fd, "\n");
+	// /* 6 */ gnl(fd, NULL);
+	// close(fd);
+
+	// printf("<<<<<<<<<<Test#11>>>>>>>>>>\n");
+	// fd = open("gnlTester/files/multiple_line_no_nl", O_RDWR);
+	// /* 1 */ gnl(fd, "01234567890123456789012345678901234567890\n");
+	// /* 2 */ gnl(fd, "987654321098765432109876543210987654321098\n");
+	// /* 3 */ gnl(fd, "0123456789012345678901234567890123456789012\n");
+	// /* 4 */ gnl(fd, "987654321098765432109876543210987654321098\n");
+	// /* 5 */ gnl(fd, "01234567890123456789012345678901234567890");
+	// /* 6 */ gnl(fd, NULL);
+	// close(fd);
+
+	// printf("<<<<<<<<<<Test#12>>>>>>>>>>\n");
+	// fd = open("gnlTester/files/multiple_line_with_nl", O_RDWR);
+	// /* 1 */ gnl(fd, "9876543210987654321098765432109876543210\n");
+	// /* 2 */ gnl(fd, "01234567890123456789012345678901234567890\n");
+	// /* 3 */ gnl(fd, "987654321098765432109876543210987654321098\n");
+	// /* 4 */ gnl(fd, "01234567890123456789012345678901234567890\n");
+	// /* 5 */ gnl(fd, "9876543210987654321098765432109876543210\n");
+	// /* 6 */ gnl(fd, NULL);
+	// close(fd);
+
+	// printf("<<<<<<<<<<Test#13>>>>>>>>>>\n");
+	// fd = open("gnlTester/files/alternate_line_nl_no_nl", O_RDWR);
+	// /* 1 */ gnl(fd, "98765432109876543210987654321098765432109\n");
+	// /* 2 */ gnl(fd, "\n");
+	// /* 3 */ gnl(fd, "012345678901234567890123456789012345678901\n");
+	// /* 4 */ gnl(fd, "\n");
+	// /* 5 */ gnl(fd, "9876543210987654321098765432109876543210987\n");
+	// /* 6 */ gnl(fd, "\n");
+	// /* 7 */ gnl(fd, "012345678901234567890123456789012345678901\n");
+	// /* 8 */ gnl(fd, "\n");
+	// /* 9 */ gnl(fd, "98765432109876543210987654321098765432109");
+	// /* 10 */ gnl(fd, NULL);
+	// close(fd);
+
+	// printf("<<<<<<<<<<Test#14>>>>>>>>>>\n");
+	// fd = open("gnlTester/files/alternate_line_nl_with_nl", O_RDWR);
+	// /* 1 */ gnl(fd, "01234567890123456789012345678901234567890\n");
+	// /* 2 */ gnl(fd, "\n");
+	// /* 3 */ gnl(fd, "987654321098765432109876543210987654321090\n");
+	// /* 4 */ gnl(fd, "\n");
+	// /* 5 */ gnl(fd, "0123456789012345678901234567890123456789012\n");
+	// /* 6 */ gnl(fd, "\n");
+	// /* 7 */ gnl(fd, "987654321098765432109876543210987654321090\n");
+	// /* 8 */ gnl(fd, "\n");
+	// /* 9 */ gnl(fd, "01234567890123456789012345678901234567890\n");
+	// /* 10 */ gnl(fd, NULL);
+	// close(fd);
+}
