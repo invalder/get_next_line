@@ -5,8 +5,8 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: nnakarac <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2022/02/26 20:14:32 by nnakarac          #+#    #+#             */
-/*   Updated: 2022/02/27 16:00:00 by nnakarac         ###   ########.fr       */
+/*   Created: 2022/03/02 15:06:13 by nnakarac          #+#    #+#             */
+/*   Updated: 2022/03/02 19:03:07 by nnakarac         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,15 @@
 # include <bsd/string.h>
 
 # ifndef BUFFER_SIZE
-#  define BUFFER_SIZE 1024
+#  define BUFFER_SIZE 4096
 # endif
+
+char	*get_next_line(int fd);
+char	*gnl_read_to_left_str(int fd, char *left_str);
+char	*gnl_strchr(char *s, int c);
+char	*gnl_strjoin(char *left_str, char *buff);
+size_t	gnl_strlen(char *s);
+char	*gnl_get_line(char *left_str);
+char	*gnl_store_newline(char *left_str);
 
 #endif
